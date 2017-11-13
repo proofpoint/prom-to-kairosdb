@@ -1,4 +1,4 @@
-package: github.com/rajatjindal/prom-to-kairos
+package: github.com/proofpoint/prom-to-kairosdb
 import:
 - package: github.com/davecgh/go-spew
   version: ^1.1.0
