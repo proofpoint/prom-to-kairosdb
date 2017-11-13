@@ -1,5 +1,7 @@
 # prom-to-kairosdb
 
+ [![Build Status](https://travis-ci.org/proofpoint/prom-to-kairosdb.svg?branch=master)](https://travis-ci.org/proofpoint/prom-to-kairosdb) [![Go Report Card](https://goreportcard.com/badge/github.com/proofpoint/prom-to-kairosdb)](https://goreportcard.com/report/github.com/proofpoint/prom-to-kairosdb)
+
  prom-to-kairosdb is a remote storage adapter for Prometheus that listens for metrics from Prometheus remote write service, and pushes to downstream KairosDB.
 
  It exposes following end points:
