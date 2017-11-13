@@ -1,0 +1,7 @@
+kairosdb-url: "abc.com"
+metricname-prefix: "my-prefix"
+metric_relabel_configs:
+   - source_labels: [ __name__ ]
+     regex: 'my_too_large_metric'
+     action: drop
+

@@ -1,0 +1,4 @@
+kairosdb-url: "abc.com"
+metric_relabel_configs:
+   - source_labels: [ __name__ ]
+     action: drop
