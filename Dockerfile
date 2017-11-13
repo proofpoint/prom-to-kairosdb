@@ -1,5 +1,5 @@
 FROM golang:1.9 as builder
-WORKDIR /go/src/github.com/rajatjindal/prom-to-kairosdb
+WORKDIR /go/src/github.com/proofpoint/prom-to-kairosdb
 
 COPY . .
 RUN go get -u github.com/Masterminds/glide
@@ -10,5 +10,5 @@ FROM alpine:3.6
 RUN mkdir /opt
 RUN apk add --no-cache ca-certificates
 WORKDIR /opt/
-COPY --from=builder /go/src/github.com/rajatjindal/prom-to-kairosdb/bin/prom-to-kairosdb .
+COPY --from=builder /go/src/github.com/proofpoint/prom-to-kairosdb/bin/prom-to-kairosdb .
 ENTRYPOINT ["./prom-to-kairosdb"]

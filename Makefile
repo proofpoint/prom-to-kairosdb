@@ -1,4 +1,4 @@
-NS ?= rajatjindal
+NS ?= proofpoint
 VERSION ?= latest
 
 REPO = prom-to-kairosdb

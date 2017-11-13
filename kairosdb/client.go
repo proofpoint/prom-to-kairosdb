@@ -11,7 +11,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
-	"github.com/rajatjindal/prom-to-kairosdb/config"
+	"github.com/proofpoint/prom-to-kairosdb/config"
 	"golang.org/x/net/context/ctxhttp"
 )
 
