@@ -2,8 +2,8 @@ package config
 
 import (
 	"errors"
-	"testing"
 	"github.com/prometheus/common/model"
+	"testing"
 )
 
 func TestParseCfgFile(t *testing.T) {
@@ -63,15 +63,15 @@ func TestParseCfgFile(t *testing.T) {
 			err:      nil,
 			mrc: []*RelabelConfig{
 				{
-					SourceLabels:model.LabelNames{model.MetricNameLabel},
-					Regex:MustNewRegexp("my_too_large_metric"),
-					Action:RelabelDrop,
+					SourceLabels: model.LabelNames{model.MetricNameLabel},
+					Regex:        MustNewRegexp("my_too_large_metric"),
+					Action:       RelabelDrop,
 				},
 				{
 					SourceLabels: model.LabelNames{model.MetricNameLabel},
-					Regex: MustNewRegexp(".*"),
-					Action: RelabelAddPrefix,
-					Prefix: "my-prefix",
+					Regex:        MustNewRegexp(".*"),
+					Action:       RelabelAddPrefix,
+					Prefix:       "my-prefix",
 				},
 			},
 		},
@@ -82,9 +82,9 @@ func TestParseCfgFile(t *testing.T) {
 			mrc: []*RelabelConfig{
 				{
 					SourceLabels: model.LabelNames{model.MetricNameLabel},
-					Regex: MustNewRegexp(".*"),
-					Action: RelabelAddPrefix,
-					Prefix: "my-prefix",
+					Regex:        MustNewRegexp(".*"),
+					Action:       RelabelAddPrefix,
+					Prefix:       "my-prefix",
 				},
 			},
 		},
