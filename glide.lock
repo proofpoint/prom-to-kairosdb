@@ -1,5 +1,5 @@
-hash: 2e696729a5a4b262f652f4baa7edca675d4f8e3bdf8578a495d4da8eb331dc77
-updated: 2017-11-13T11:01:45.872294321-08:00
+hash: 0dc286c824cc4e5c034bc9824a3e0ca3376c2450d1d5ce4fd3704be6d9de6ae3
+updated: 2017-11-13T15:34:37.255930494-08:00
 imports:
 - name: github.com/beorn7/perks
   version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
@@ -45,6 +45,7 @@ imports:
   version: 967789050ba94deca04a5e84cce8ad472ce313c1
   subpackages:
   - prometheus
+  - prometheus/promhttp
 - name: github.com/prometheus/client_model
   version: 6f3806018612930941127f2a7c6c453ba2c527d2
   subpackages:
@@ -107,4 +108,12 @@ imports:
   - transport
 - name: gopkg.in/yaml.v2
   version: 53feefa2559fb8dfa8d81baad31be332c97d6c77
-testImports: []
+testImports:
+- name: github.com/pmezard/go-difflib
+  version: d8ed2627bdf02c080bf22230dbb337003b7aba2d
+  subpackages:
+  - difflib
+- name: github.com/stretchr/testify
+  version: 69483b4bd14f5845b5a1e55bca19e954e827f1d0
+  subpackages:
+  - assert
