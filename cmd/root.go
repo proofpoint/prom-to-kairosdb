@@ -19,11 +19,11 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/rajatjindal/prom-to-kairosdb/config"
-	"github.com/rajatjindal/prom-to-kairosdb/kairosdb"
-	"github.com/rajatjindal/prom-to-kairosdb/server"
-	"github.com/spf13/cobra"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/proofpoint/prom-to-kairosdb/config"
+	"github.com/proofpoint/prom-to-kairosdb/kairosdb"
+	"github.com/proofpoint/prom-to-kairosdb/server"
+	"github.com/spf13/cobra"
 )
 
 var cfgFile string

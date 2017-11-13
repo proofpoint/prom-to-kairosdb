@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	"github.com/prometheus/common/model"
-	"github.com/rajatjindal/prom-to-kairosdb/config"
+	"github.com/proofpoint/prom-to-kairosdb/config"
 )
 
 func TestRelabel(t *testing.T) {

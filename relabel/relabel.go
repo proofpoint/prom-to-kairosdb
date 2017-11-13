@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/prometheus/common/model"
-	"github.com/rajatjindal/prom-to-kairosdb/config"
+	"github.com/proofpoint/prom-to-kairosdb/config"
 )
 
 //Process the samples and apply RelabelConfig

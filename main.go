@@ -14,7 +14,7 @@
 
 package main
 
-import "github.com/rajatjindal/prom-to-kairosdb/cmd"
+import "github.com/proofpoint/prom-to-kairosdb/cmd"
 
 func main() {
 	cmd.Execute()

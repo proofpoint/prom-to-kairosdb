@@ -2,14 +2,15 @@ package server
 
 import (
 	"fmt"
+	"io/ioutil"
+	"net/http"
+
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/prompb"
-	"github.com/rajatjindal/prom-to-kairosdb/kairosdb"
-	"io/ioutil"
-	"net/http"
+	"github.com/proofpoint/prom-to-kairosdb/kairosdb"
 )
 
 var (

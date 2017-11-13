@@ -4,8 +4,8 @@ import (
 	"math"
 
 	"github.com/prometheus/common/model"
-	"github.com/rajatjindal/prom-to-kairosdb/config"
-	"github.com/rajatjindal/prom-to-kairosdb/relabel"
+	"github.com/proofpoint/prom-to-kairosdb/config"
+	"github.com/proofpoint/prom-to-kairosdb/relabel"
 )
 
 // DataPoint represents the kairosdb DataPoint
