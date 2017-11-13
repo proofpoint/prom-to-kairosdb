@@ -23,6 +23,7 @@ import (
 	"github.com/rajatjindal/prom-to-kairosdb/kairosdb"
 	"github.com/rajatjindal/prom-to-kairosdb/server"
 	"github.com/spf13/cobra"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 var cfgFile string
@@ -68,6 +69,7 @@ func serve(addr string, client kairosdb.Client) error {
 	}
 
 	http.Handle("/write", serverobj)
+	http.Handle("/metrics", promhttp.Handler())
 
 	err := http.ListenAndServe(addr, nil)
 	fmt.Println(err)
