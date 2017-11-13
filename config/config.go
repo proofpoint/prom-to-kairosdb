@@ -19,7 +19,7 @@ const defaultServerPort = ":9201"
 // Config struct is top level config object
 type Config struct {
 	KairosdbURL          URL              `json:"kairosdb-url" yaml:"kairosdb-url"`
-	MetricnamePrefix     string			  `json:"metricname-prefix" yaml:"metricname-prefix"`
+	MetricnamePrefix     string           `json:"metricname-prefix" yaml:"metricname-prefix"`
 	Timeout              time.Duration    `json:"timeout" yaml:"timeout"`
 	MetricRelabelConfigs []*RelabelConfig `yaml:"metric_relabel_configs,omitempty"`
 	Server               Server           `yaml:"server,omitempty"`
@@ -194,9 +194,9 @@ func ParseCfgFile(cfgFile string) (*Config, error) {
 	if cfg.MetricnamePrefix != "" {
 		relabelConfig := &RelabelConfig{
 			SourceLabels: model.LabelNames{model.MetricNameLabel},
-			Regex: MustNewRegexp(".*"),
-			Action: RelabelAddPrefix,
-			Prefix: cfg.MetricnamePrefix,
+			Regex:        MustNewRegexp(".*"),
+			Action:       RelabelAddPrefix,
+			Prefix:       cfg.MetricnamePrefix,
 		}
 
 		cfg.MetricRelabelConfigs = append(cfg.MetricRelabelConfigs, relabelConfig)
