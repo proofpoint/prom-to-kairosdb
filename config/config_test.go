@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"github.com/prometheus/common/model"
 	"testing"
 )
@@ -50,7 +51,7 @@ func TestParseCfgFile(t *testing.T) {
 		{
 			name:     "invalid regex in metricrelabelconfig",
 			fileName: "testdata/invalid_regex.yaml",
-			err:      errors.New("error parsing regexp: missing closing ): `^(?:$^*()$`"),
+			err:      errors.New("error parsing regexp: missing closing ): `$^*(`"),
 		},
 		{
 			name:     "file with action 'addprefix' but no prefix in metricrelabelconfig",
@@ -91,7 +92,14 @@ func TestParseCfgFile(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		cfg, err := ParseCfgFile(c.fileName)
+		cfg := &Config{}
+		err := ParseCfgFile(c.fileName, cfg)
+		fmt.Println(c.name, c.fileName, err)
+		if c.err != nil && err == nil {
+			t.Errorf("case '%s'. Expected %+v, Got no error", c.name, c.err)
+			continue
+		}
+
 		if c.err != nil && c.err.Error() != err.Error() {
 			t.Errorf("case '%s'. Expected %+v, Got %+v", c.name, c.err, err)
 		}

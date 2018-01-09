@@ -1,16 +1,15 @@
 package server
 
 import (
-	"fmt"
-	"io/ioutil"
-	"net/http"
-
+	"github.com/Sirupsen/logrus"
 	"github.com/gogo/protobuf/proto"
 	"github.com/golang/snappy"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"github.com/prometheus/prometheus/prompb"
 	"github.com/proofpoint/prom-to-kairosdb/kairosdb"
+	"io/ioutil"
+	"net/http"
 )
 
 var (
@@ -33,21 +32,21 @@ type Server struct {
 func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	compressed, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		fmt.Println(err.Error())
+		logrus.Errorf("%s", err)
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	reqBuf, err := snappy.Decode(nil, compressed)
 	if err != nil {
-		fmt.Println(err.Error())
+		logrus.Errorf("%s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	var req prompb.WriteRequest
 	if err := proto.Unmarshal(reqBuf, &req); err != nil {
-		fmt.Println(err.Error())
+		logrus.Errorf("%s", err)
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}

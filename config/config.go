@@ -9,6 +9,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/mitchellh/go-homedir"
 	"github.com/prometheus/common/model"
 	"gopkg.in/yaml.v2"
@@ -24,6 +25,7 @@ type Config struct {
 	MetricRelabelConfigs []*RelabelConfig `yaml:"metric_relabel_configs,omitempty"`
 	Server               Server           `yaml:"server,omitempty"`
 	DryRun               bool             `yaml:"dryrun,omitempty"`
+	Debug                bool             `yaml:"debug,omitempty"`
 }
 
 type Server struct {
@@ -132,31 +134,30 @@ const (
 )
 
 // ParseCfgFile read the provided config file and parse it into config object
-func ParseCfgFile(cfgFile string) (*Config, error) {
+func ParseCfgFile(cfgFile string, cfg *Config) error {
 	if cfgFile == "" {
-		return nil, fmt.Errorf("no config file provided")
+		return fmt.Errorf("no config file provided")
 	}
 
 	filename, err := getAbsFilename(cfgFile)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
-	cfg := &Config{}
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	err = yaml.Unmarshal(yamlFile, cfg)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	emptyurl := URL{}
 	if cfg.KairosdbURL == emptyurl {
-		return nil, fmt.Errorf("kairosdb-url is mandatory")
+		return fmt.Errorf("kairosdb-url is mandatory")
 	}
 
 	if cfg.Server.Port == "" {
@@ -166,9 +167,14 @@ func ParseCfgFile(cfgFile string) (*Config, error) {
 	cfg.DryRun = true
 
 	if cfg.MetricnamePrefix != "" {
+		regex, err := NewRegexp(".*")
+		if err != nil {
+			return err
+		}
+
 		relabelConfig := &RelabelConfig{
 			SourceLabels: model.LabelNames{model.MetricNameLabel},
-			Regex:        MustNewRegexp(".*"),
+			Regex:        regex,
 			Action:       RelabelAddPrefix,
 			Prefix:       cfg.MetricnamePrefix,
 		}
@@ -178,11 +184,11 @@ func ParseCfgFile(cfgFile string) (*Config, error) {
 
 	err = validateMetricRelabelConfigs(cfg.MetricRelabelConfigs)
 	if err != nil {
-		fmt.Println(err)
-		return nil, err
+		logrus.Errorf("%s", err)
+		return err
 	}
 
-	return cfg, nil
+	return nil
 }
 
 func validateMetricRelabelConfigs(metricRelabelConfigs []*RelabelConfig) error {
@@ -192,13 +198,21 @@ func validateMetricRelabelConfigs(metricRelabelConfigs []*RelabelConfig) error {
 				return fmt.Errorf("with action==labeldrop only regex is needed")
 			}
 		}
+
+		if c.Action == RelabelAddPrefix && c.Prefix == "" {
+			return fmt.Errorf("addprefix action requires prefix")
+		}
 	}
 
 	return nil
 }
 
 func getAbsFilename(cfgFile string) (string, error) {
-	cwd := getCurrentWorkingDirectory()
+	cwd, err := getCurrentWorkingDirectory()
+	if err != nil {
+		return "", err
+	}
+
 	home, _ := homedir.Dir()
 
 	files := []string{
@@ -216,29 +230,29 @@ func getAbsFilename(cfgFile string) (string, error) {
 	return "", fmt.Errorf("valid file not found")
 }
 
-func getCurrentWorkingDirectory() string {
+func getCurrentWorkingDirectory() (string, error) {
 	ex, err := os.Executable()
 	if err != nil {
-		panic(err)
+		return "", err
 	}
-	return filepath.Dir(ex)
+	return filepath.Dir(ex), nil
 }
 
 func ValidateFile(cfgFile string) (bool, error) {
 	fstat, err := os.Stat(cfgFile)
 	if os.IsNotExist(err) {
-		fmt.Printf("%s dont exist\n", cfgFile)
-		return false, fmt.Errorf("file not found\n")
+		logrus.Errorf("%s dont exist\n", cfgFile)
+		return false, fmt.Errorf("file not found")
 	}
 
 	if fstat.IsDir() {
-		fmt.Printf("%s is a directory, not a file\n", cfgFile)
+		logrus.Errorf("%s is a directory, not a file\n", cfgFile)
 		return false, fmt.Errorf("config file a directory, valid yaml file needed")
 	}
 
 	if fstat.Size() == 0 {
-		fmt.Printf("%s is empty", cfgFile)
-		return false, fmt.Errorf("config file is empty\n")
+		logrus.Errorf("%s is empty", cfgFile)
+		return false, fmt.Errorf("config file is empty")
 	}
 
 	return true, nil

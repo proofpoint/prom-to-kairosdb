@@ -15,10 +15,10 @@
 package cmd
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/proofpoint/prom-to-kairosdb/config"
 	"github.com/proofpoint/prom-to-kairosdb/kairosdb"
@@ -26,8 +26,11 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var cfgFile string
-var cfg *config.Config
+var (
+	cfgFile string
+	dryRun  bool
+	debug   bool
+)
 
 // RootCmd represents the base command when called without any subcommands
 var RootCmd = &cobra.Command{
@@ -41,22 +44,32 @@ var RootCmd = &cobra.Command{
 
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		logrus.Errorf("%s", err)
 		os.Exit(1)
 	}
 }
 
 func init() {
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME)")
+	RootCmd.PersistentFlags().BoolVar(&dryRun, "dryrun", false, "if set to true, dont push metrics to downstream")
+	RootCmd.PersistentFlags().BoolVar(&debug, "debug", false, "if set to true, print debug level logs")
+
 	server.RegisterPrometheusMetrics()
 	kairosdb.RegisterPrometheusMetrics()
 }
 
 func Main() {
 	var err error
-	cfg, err = config.ParseCfgFile(cfgFile)
+	cfg := &config.Config{}
+	err = config.ParseCfgFile(cfgFile, cfg)
 	if err != nil {
-		panic(err)
+		logrus.Errorf("%s", err)
+		os.Exit(-1)
+	}
+
+	if debug {
+		cfg.Debug = true
+		logrus.SetLevel(logrus.DebugLevel)
 	}
 
 	client := kairosdb.NewClient(cfg)
@@ -72,6 +85,6 @@ func serve(addr string, client kairosdb.Client) error {
 	http.Handle("/metrics", promhttp.Handler())
 
 	err := http.ListenAndServe(addr, nil)
-	fmt.Println(err)
+	logrus.Errorf("%s", err)
 	return err
 }
