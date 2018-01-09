@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/Sirupsen/logrus"
-	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -31,6 +30,13 @@ var (
 		},
 		[]string{"remote"},
 	)
+	unknownStatusSamples = prometheus.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "unknown_status_samples_total",
+			Help: "Total number of samples which we can't tell if they were pushed downstream successfully.",
+		},
+		[]string{"remote"},
+	)
 	sentBatchDuration = prometheus.NewHistogramVec(
 		prometheus.HistogramOpts{
 			Name:    "sent_batch_duration_seconds",
@@ -42,7 +48,7 @@ var (
 	filteredSamples = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "filtered_samples_total",
-			Help: "Total number of samples which got filtered before being sent to remote storage.",
+			Help: "Total number of samples which got filtered out before being sent to remote storage.",
 		},
 		[]string{"remote"},
 	)
@@ -51,6 +57,7 @@ var (
 func RegisterPrometheusMetrics() {
 	prometheus.MustRegister(sentSamples)
 	prometheus.MustRegister(failedSamples)
+	prometheus.MustRegister(unknownStatusSamples)
 	prometheus.MustRegister(sentBatchDuration)
 	prometheus.MustRegister(filteredSamples)
 }
@@ -76,7 +83,7 @@ func NewClient(cfg *config.Config) *Client {
 	}
 }
 
-// SendSamples - sends the samples to KairosDB
+// Send - Apply RelabelConfigs, massage the data and write the samples to KairosDB
 func (c *Client) Send(samples model.Samples) (err error) {
 	datapoints := FilterAndProcessSamples(samples, c.cfg)
 
@@ -86,6 +93,9 @@ func (c *Client) Send(samples model.Samples) (err error) {
 	begin := time.Now()
 
 	err = c.write(datapoints)
+	if err != nil {
+		logrus.Errorf("failed writing metrics to downstream. error: %s", err)
+	}
 
 	duration := time.Since(begin).Seconds()
 	sentBatchDuration.WithLabelValues(c.name()).Observe(duration)
@@ -104,7 +114,7 @@ func (c *Client) write(datapoints []*DataPoint) error {
 	}
 
 	if c.cfg.DryRun {
-		logrus.Infof("pushing %d datapoints : %v", totalRequests, string(buf))
+		logrus.Debugf("pushing %d datapoints : %v", totalRequests, string(buf))
 		return nil
 	}
 
@@ -113,24 +123,36 @@ func (c *Client) write(datapoints []*DataPoint) error {
 	resp, err := ctxhttp.Post(ctx, http.DefaultClient, c.url.String(), contentTypeJSON, bytes.NewBuffer(buf))
 
 	if err != nil {
+		failedSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
 		return err
 	}
+
 	defer resp.Body.Close()
 
+	if resp == nil {
+		failedSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
+		logrus.Errorf("no response received")
+		return fmt.Errorf("no response received")
+	}
+
 	if resp.StatusCode == http.StatusNoContent {
+		sentSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
 		return nil
 	}
 
 	// API returns status code 400 on error, encoding error details in the
 	// response content in JSON.
-	buf, err = ioutil.ReadAll(resp.Body)
 
 	if err != nil {
+		logrus.Errorf("%s", err)
+		unknownStatusSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
 		return err
 	}
 
 	var r map[string][]interface{}
-	if err := json.Unmarshal(buf, &r); err != nil {
+	if err = json.Unmarshal(buf, &r); err != nil {
+		logrus.Errorf("%s", err)
+		unknownStatusSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
 		return err
 	}
 
@@ -140,7 +162,7 @@ func (c *Client) write(datapoints []*DataPoint) error {
 	sentSamples.WithLabelValues(c.name()).Add(float64(successful))
 	failedSamples.WithLabelValues(c.name()).Add(float64(failed))
 
-	return fmt.Errorf("failed to write %d samples to KairosDB, %d succeeded", len(r["errors"]), totalRequests-len(r["errors"]))
+	return fmt.Errorf("failed to write [%d] samples from [%d]", failed, totalRequests)
 }
 
 func (c *Client) name() string {
