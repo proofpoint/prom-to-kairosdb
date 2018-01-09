@@ -23,6 +23,7 @@ type Config struct {
 	Timeout              time.Duration    `json:"timeout" yaml:"timeout"`
 	MetricRelabelConfigs []*RelabelConfig `yaml:"metric_relabel_configs,omitempty"`
 	Server               Server           `yaml:"server,omitempty"`
+	DryRun               bool             `yaml:"dryrun,omitempty"`
 }
 
 type Server struct {
@@ -36,35 +37,6 @@ type RelabelConfig struct {
 	Regex        Regexp           `yaml:"regex,omitempty"`
 	Action       RelabelAction    `yaml:"action,omitempty"`
 	Prefix       string
-}
-
-// UnmarshalYAML implements the yaml.Unmarshaler interface.
-func (c *RelabelConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	c = &RelabelConfig{}
-	type plain RelabelConfig
-	if err := unmarshal((*plain)(c)); err != nil {
-		return err
-	}
-
-	if c.Regex.Regexp == nil {
-		c.Regex = MustNewRegexp("")
-	}
-
-	if c.Action == RelabelLabelDrop || c.Action == RelabelLabelKeep {
-		if c.SourceLabels != nil ||
-			c.Separator != "" ||
-			c.Prefix != "" {
-			return fmt.Errorf("%s action requires only 'regex', and no other fields", c.Action)
-		}
-	}
-
-	if c.Action == RelabelAddPrefix {
-		if c.Prefix == "" {
-			return fmt.Errorf("%s action requires prefix", c.Action)
-		}
-	}
-
-	return nil
 }
 
 // URL struct helps parse url from config file
@@ -127,7 +99,7 @@ func (re Regexp) MarshalYAML() (interface{}, error) {
 // NewRegexp creates a new anchored Regexp and returns an error if the
 // passed-in regular expression does not compile.
 func NewRegexp(s string) (Regexp, error) {
-	regex, err := regexp.Compile("^(?:" + s + ")$")
+	regex, err := regexp.Compile(s)
 	return Regexp{
 		Regexp:   regex,
 		original: s,
@@ -191,6 +163,8 @@ func ParseCfgFile(cfgFile string) (*Config, error) {
 		cfg.Server.Port = defaultServerPort
 	}
 
+	cfg.DryRun = true
+
 	if cfg.MetricnamePrefix != "" {
 		relabelConfig := &RelabelConfig{
 			SourceLabels: model.LabelNames{model.MetricNameLabel},
@@ -202,7 +176,25 @@ func ParseCfgFile(cfgFile string) (*Config, error) {
 		cfg.MetricRelabelConfigs = append(cfg.MetricRelabelConfigs, relabelConfig)
 	}
 
+	err = validateMetricRelabelConfigs(cfg.MetricRelabelConfigs)
+	if err != nil {
+		fmt.Println(err)
+		return nil, err
+	}
+
 	return cfg, nil
+}
+
+func validateMetricRelabelConfigs(metricRelabelConfigs []*RelabelConfig) error {
+	for _, c := range metricRelabelConfigs {
+		if c.Action == RelabelLabelDrop {
+			if c.SourceLabels != nil {
+				return fmt.Errorf("with action==labeldrop only regex is needed")
+			}
+		}
+	}
+
+	return nil
 }
 
 func getAbsFilename(cfgFile string) (string, error) {

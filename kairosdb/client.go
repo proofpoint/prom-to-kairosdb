@@ -95,10 +95,16 @@ func (c *Client) Send(samples model.Samples) (err error) {
 // Write sends a batch of datapoints to KairosDB via its HTTP API.
 func (c *Client) write(datapoints []*DataPoint) error {
 	totalRequests := len(datapoints)
+
 	c.url.Path = postEndpoint
 	buf, err := json.Marshal(datapoints)
 	if err != nil {
 		return err
+	}
+
+	if c.cfg.DryRun {
+		fmt.Printf("pushing %d datapoints : %v", totalRequests, string(buf))
+		return nil
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), c.timeout)

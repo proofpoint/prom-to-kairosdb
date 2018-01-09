@@ -15,3 +15,5 @@
 .idea
 bin/
 bin/*
+/config.yaml
+/deployment.yaml
