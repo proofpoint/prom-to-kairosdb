@@ -30,30 +30,30 @@ func relabel(metric model.Metric, cfg *config.RelabelConfig) model.Metric {
 	switch cfg.Action {
 	case config.RelabelDrop:
 		if cfg.Regex.MatchString(valueOfSourceLabels) {
-			logrus.Info("dropping metric with values: ", valueOfSourceLabels)
+			logrus.Debug("dropping metric with values: ", valueOfSourceLabels)
 			return nil
 		}
 	case config.RelabelKeep:
 		if !cfg.Regex.MatchString(valueOfSourceLabels) {
-			logrus.Info("dropping metric with values: ", valueOfSourceLabels)
+			logrus.Debug("dropping metric with values: ", valueOfSourceLabels)
 			return nil
 		}
 	case config.RelabelAddPrefix:
 		if cfg.Regex.MatchString(valueOfSourceLabels) {
 			metric[model.MetricNameLabel] = model.LabelValue(fmt.Sprintf("%s%s", cfg.Prefix, metric[model.MetricNameLabel]))
-			logrus.Infof("Added prefix [%s]: %s\n", cfg.Prefix, metric[model.MetricNameLabel])
+			logrus.Debugf("Added prefix [%s]: %s\n", cfg.Prefix, metric[model.MetricNameLabel])
 		}
 	case config.RelabelLabelDrop:
 		for labelName := range metric {
 			if cfg.Regex.MatchString(string(labelName)) {
-				logrus.Infof("dropping label [%s] in metric [%s]: ", labelName, string(metric["__name__"]))
+				logrus.Debugf("dropping label [%s] in metric [%s]: ", labelName, string(metric["__name__"]))
 				delete(metric, labelName)
 			}
 		}
 	case config.RelabelLabelKeep:
 		for labelName := range metric {
 			if !cfg.Regex.MatchString(string(labelName)) {
-				logrus.Infof("dropping labels [%s] from metric [%s]", labelName, string(metric["__name__"]))
+				logrus.Debugf("dropping labels [%s] from metric [%s]", labelName, string(metric["__name__"]))
 				delete(metric, labelName)
 			}
 		}

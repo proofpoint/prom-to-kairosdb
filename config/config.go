@@ -16,6 +16,9 @@ import (
 )
 
 const defaultServerPort = ":9201"
+const minTimeout = 1 * time.Second
+const maxTimeout = 60 * time.Second
+const defaultTimeout = 30 * time.Second
 
 // Config struct is top level config object
 type Config struct {
@@ -164,8 +167,6 @@ func ParseCfgFile(cfgFile string, cfg *Config) error {
 		cfg.Server.Port = defaultServerPort
 	}
 
-	cfg.DryRun = true
-
 	if cfg.MetricnamePrefix != "" {
 		regex, err := NewRegexp(".*")
 		if err != nil {
@@ -186,6 +187,18 @@ func ParseCfgFile(cfgFile string, cfg *Config) error {
 	if err != nil {
 		logrus.Errorf("%s", err)
 		return err
+	}
+
+	if cfg.Timeout == 0*time.Second {
+		logrus.Infof("timeout not provided. Setting it to default value of %s", defaultTimeout)
+		cfg.Timeout = defaultTimeout
+	}
+	if cfg.Timeout > maxTimeout {
+		return fmt.Errorf("timeout %d is too high. It should be between %v and %v", cfg.Timeout, minTimeout, maxTimeout)
+	}
+
+	if cfg.Timeout < minTimeout {
+		return fmt.Errorf("timeout %d is too low. It should be between %v and %v", cfg.Timeout, minTimeout, maxTimeout)
 	}
 
 	return nil
