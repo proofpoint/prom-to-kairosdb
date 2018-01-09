@@ -17,6 +17,39 @@ import (
 	swagger_options "github.com/grpc-ecosystem/grpc-gateway/protoc-gen-swagger/options"
 )
 
+var wktSchemas = map[string]schemaCore{
+	".google.protobuf.Timestamp": schemaCore{
+		Type:   "string",
+		Format: "date-time",
+	},
+	".google.protobuf.Duration": schemaCore{
+		Type: "string",
+	},
+	".google.protobuf.StringValue": schemaCore{
+		Type: "string",
+	},
+	".google.protobuf.Int32Value": schemaCore{
+		Type:   "integer",
+		Format: "int32",
+	},
+	".google.protobuf.Int64Value": schemaCore{
+		Type:   "integer",
+		Format: "int64",
+	},
+	".google.protobuf.FloatValue": schemaCore{
+		Type:   "number",
+		Format: "float",
+	},
+	".google.protobuf.DoubleValue": schemaCore{
+		Type:   "number",
+		Format: "double",
+	},
+	".google.protobuf.BoolValue": schemaCore{
+		Type:   "boolean",
+		Format: "boolean",
+	},
+}
+
 func listEnumNames(enum *descriptor.Enum) (names []string) {
 	for _, value := range enum.GetValue() {
 		names = append(names, value.GetName())
@@ -128,8 +161,9 @@ func findServicesMessagesAndEnumerations(s []*descriptor.Service, reg *descripto
 			// Request may be fully included in query
 			if _, ok := refs[fmt.Sprintf("#/definitions/%s", fullyQualifiedNameToSwaggerName(meth.RequestType.FQMN(), reg))]; ok {
 				m[fullyQualifiedNameToSwaggerName(meth.RequestType.FQMN(), reg)] = meth.RequestType
-				findNestedMessagesAndEnumerations(meth.RequestType, reg, m, e)
 			}
+			findNestedMessagesAndEnumerations(meth.RequestType, reg, m, e)
+
 			m[fullyQualifiedNameToSwaggerName(meth.ResponseType.FQMN(), reg)] = meth.ResponseType
 			findNestedMessagesAndEnumerations(meth.ResponseType, reg, m, e)
 		}
@@ -164,6 +198,8 @@ func renderMessagesAsDefinition(messages messageMap, d swaggerDefinitionsObject,
 	for name, msg := range messages {
 		switch name {
 		case ".google.protobuf.Timestamp":
+			continue
+		case ".google.protobuf.Duration":
 			continue
 		}
 		if opt := msg.GetOptions(); opt != nil && opt.MapEntry != nil && *opt.MapEntry {
@@ -236,11 +272,8 @@ func schemaOfField(f *descriptor.Field, reg *descriptor.Registry) swaggerSchemaO
 
 	switch ft := fd.GetType(); ft {
 	case pbdescriptor.FieldDescriptorProto_TYPE_ENUM, pbdescriptor.FieldDescriptorProto_TYPE_MESSAGE, pbdescriptor.FieldDescriptorProto_TYPE_GROUP:
-		if fd.GetTypeName() == ".google.protobuf.Timestamp" && pbdescriptor.FieldDescriptorProto_TYPE_MESSAGE == ft {
-			core = schemaCore{
-				Type:   "string",
-				Format: "date-time",
-			}
+		if wktSchema, ok := wktSchemas[fd.GetTypeName()]; ok {
+			core = wktSchema
 		} else {
 			core = schemaCore{
 				Ref: "#/definitions/" + fullyQualifiedNameToSwaggerName(fd.GetTypeName(), reg),
@@ -481,7 +514,13 @@ func renderServices(services []*descriptor.Service, paths swaggerPathsObject, re
 					var paramType, paramFormat string
 					switch pt := parameter.Target.GetType(); pt {
 					case pbdescriptor.FieldDescriptorProto_TYPE_GROUP, pbdescriptor.FieldDescriptorProto_TYPE_MESSAGE:
-						return fmt.Errorf("only primitive types are allowed in path parameters")
+						if descriptor.IsWellKnownType(parameter.Target.GetTypeName()) {
+							schema := schemaOfField(parameter.Target, reg)
+							paramType = schema.Type
+							paramFormat = schema.Format
+						} else {
+							return fmt.Errorf("only primitive and well-known types are allowed in path parameters")
+						}
 					case pbdescriptor.FieldDescriptorProto_TYPE_ENUM:
 						paramType = fullyQualifiedNameToSwaggerName(parameter.Target.GetTypeName(), reg)
 						paramFormat = ""
@@ -680,6 +719,12 @@ func applyTemplate(p param) (string, error) {
 		if spb.Info != nil {
 			if spb.Info.Title != "" {
 				s.Info.Title = spb.Info.Title
+			}
+			if spb.Info.Description != "" {
+				s.Info.Description = spb.Info.Description
+			}
+			if spb.Info.TermsOfService != "" {
+				s.Info.TermsOfService = spb.Info.TermsOfService
 			}
 			if spb.Info.Version != "" {
 				s.Info.Version = spb.Info.Version

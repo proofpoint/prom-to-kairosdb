@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"github.com/Sirupsen/logrus"
 	"io/ioutil"
 	"net/http"
 	"time"
@@ -103,7 +104,7 @@ func (c *Client) write(datapoints []*DataPoint) error {
 	}
 
 	if c.cfg.DryRun {
-		fmt.Printf("pushing %d datapoints : %v", totalRequests, string(buf))
+		logrus.Infof("pushing %d datapoints : %v", totalRequests, string(buf))
 		return nil
 	}
 

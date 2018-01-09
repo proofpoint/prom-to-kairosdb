@@ -122,7 +122,8 @@ func TestFilterAndProcessSamples(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		cfg, err := config.ParseCfgFile(c.cfgfile)
+		cfg := &config.Config{}
+		err := config.ParseCfgFile(c.cfgfile, cfg)
 
 		if err != nil {
 			t.Errorf("case %s. failed to parse config file %s", c.name, c.cfgfile)
