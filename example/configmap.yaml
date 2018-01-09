@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prom-to-kairosdb
+data:
+  config.yaml: |
+    kairosdb-url: "http://localhost/1234"
+    metricname-prefix: "k8sdev."
+    metric_relabel_configs:
+       - regex: '^pod_ip$'
+         action: labeldrop
+       - regex: '^created_by_name$'
+         action: labeldrop
+       - regex: '^pod$'
+         action: labeldrop
+       - regex: '^image$'
+         action: labeldrop
+       - regex: '^id$'
+         action: labeldrop
+       - regex: '^name$'
+         action: labeldrop
+       - regex: '^pod_name$'
+         action: labeldrop
