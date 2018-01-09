@@ -1,0 +1,39 @@
+---
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    app: prom-to-kairosdb
+  name: prom-to-kairosdb
+spec:
+  selector:
+      matchLabels:
+        app: prom-to-kairosdb
+  template:
+    metadata:
+      labels:
+        app: prom-to-kairosdb
+    spec:
+      containers:
+      - name: prom-to-kairosdb
+        image: <IMAGE_PATH>
+        ports:
+        - containerPort: 9201
+          protocol: TCP
+        volumeMounts:
+          - name: prom-to-kairosdb
+            mountPath: /root
+            readOnly: true
+        resources: {}
+        terminationMessagePath: "/dev/termination-log"
+        terminationMessagePolicy: File
+        imagePullPolicy: Always
+        args: ["--config=/root/config.yaml"]
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 30
+      dnsPolicy: ClusterFirst
+      volumes:
+        - name: prom-to-kairosdb
+          configMap:
+            name: prom-to-kairosdb
+      securityContext: {}

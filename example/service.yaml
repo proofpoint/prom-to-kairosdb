@@ -1,0 +1,22 @@
+---
+kind: Service
+apiVersion: v1
+metadata:
+  labels:
+    app: prom-to-kairosdb
+  name: prom-to-kairosdb
+  annotations:
+    external-dns.alpha.kubernetes.io/hostname: <CNAME>
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: http
+    service.beta.kubernetes.io/aws-load-balancer-internal: 0.0.0.0/0
+    service.beta.kubernetes.io/aws-load-balancer-ssl-ports: http
+    service.beta.kubernetes.io/aws-load-balancer-proxy-protocol: '*'
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: <CERT-ARN>
+spec:
+  ports:
+  - port: 443
+    targetPort: 9201
+    name: http
+  selector:
+    app: prom-to-kairosdb
+  type: LoadBalancer
