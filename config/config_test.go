@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/prometheus/common/model"
 	"testing"
+	"time"
 )
 
 func TestParseCfgFile(t *testing.T) {
@@ -12,7 +13,22 @@ func TestParseCfgFile(t *testing.T) {
 		fileName string
 		err      error
 		mrc      []*RelabelConfig
+		timeout  time.Duration
 	}{
+		{
+			name:     "valid yaml file",
+			fileName: "testdata/valid.yaml",
+		},
+		{
+			name:     "valid yaml with default timeout",
+			fileName: "testdata/default_timeout.yaml",
+			timeout:  defaultTimeout,
+		},
+		{
+			name:     "valid yaml with explicit timeout",
+			fileName: "testdata/explicit_timeout.yaml",
+			timeout:  10 * time.Second,
+		},
 		{
 			name: "no config file provided",
 			err:  errors.New("no config file provided"),
@@ -56,6 +72,11 @@ func TestParseCfgFile(t *testing.T) {
 			name:     "file with action 'addprefix' but no prefix in metricrelabelconfig",
 			fileName: "testdata/no_prefix.yaml",
 			err:      errors.New("addprefix action requires prefix"),
+		},
+		{
+			name:     "file with action 'labeldrop' and have sourcelabels defined",
+			fileName: "testdata/relabel_drop_sourcelabels.yaml",
+			err:      errors.New("with action==labeldrop only regex is needed"),
 		},
 		{
 			name:     "file with action 'addprefix' and toplevel prefix",
@@ -115,5 +136,10 @@ func TestParseCfgFile(t *testing.T) {
 				t.Errorf("case '%s'. Expected prefix: %s, got %s", c.name, "my-prefix", last.Prefix)
 			}
 		}
+
+		if c.timeout != 0*time.Second && c.timeout != cfg.Timeout {
+			t.Errorf("case '%s'. Expected timeout: %v, got %v", c.name, c.timeout, cfg.Timeout)
+		}
+
 	}
 }
