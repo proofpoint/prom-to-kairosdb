@@ -2,7 +2,6 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"github.com/prometheus/common/model"
 	"testing"
 )
@@ -92,9 +91,7 @@ func TestParseCfgFile(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		cfg := &Config{}
-		err := ParseCfgFile(c.fileName, cfg)
-		fmt.Println(c.name, c.fileName, err)
+		cfg, err := ParseCfgFile(c.fileName)
 		if c.err != nil && err == nil {
 			t.Errorf("case '%s'. Expected %+v, Got no error", c.name, c.err)
 			continue
