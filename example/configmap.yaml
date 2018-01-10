@@ -4,7 +4,7 @@ metadata:
   name: prom-to-kairosdb
 data:
   config.yaml: |
-    kairosdb-url: "http://localhost/1234"
+    kairosdb-url: "http://kairosdb-api-url.yourdomain.com"
     metricname-prefix: "k8sdev."
     metric_relabel_configs:
        - regex: '^pod_ip$'
