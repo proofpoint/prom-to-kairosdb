@@ -59,9 +59,7 @@ func init() {
 }
 
 func Main() {
-	var err error
-	cfg := &config.Config{}
-	err = config.ParseCfgFile(cfgFile, cfg)
+	cfg, err := config.ParseCfgFile(cfgFile)
 	if err != nil {
 		logrus.Errorf("%s", err)
 		os.Exit(-1)

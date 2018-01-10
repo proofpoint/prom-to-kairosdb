@@ -34,7 +34,7 @@ var (
 	unknownStatusSamples = prometheus.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "unknown_status_samples_total",
-			Help: "Total number of samples which we can't tell if they were pushed downstream successfully.",
+			Help: "Total number of samples sent without receiving a response.",
 		},
 		[]string{"remote"},
 	)
@@ -132,7 +132,6 @@ func (c *Client) write(datapoints []*DataPoint) error {
 
 	if resp == nil {
 		failedSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
-		logrus.Errorf("no response received")
 		return fmt.Errorf("no response received")
 	}
 
@@ -167,13 +166,13 @@ func (c *Client) write(datapoints []*DataPoint) error {
 	if successful < 0 {
 		logrus.Errorf("response from kairosdb %v", r)
 		logrus.Errorf("req to kairosdb %v", string(buf))
-		return fmt.Errorf("no of failed datapoints [%d] is greater than total datapoints [%d]", failed, totalRequests)
+		return fmt.Errorf("number of failed datapoints [%d] is greater than total datapoints [%d]", failed, totalRequests)
 	}
 
 	sentSamples.WithLabelValues(c.name()).Add(float64(successful))
 	failedSamples.WithLabelValues(c.name()).Add(float64(failed))
 
-	return fmt.Errorf("failed to write [%d] samples from [%d]", failed, totalRequests)
+	return fmt.Errorf("failed to write [%d] samples of [%d]", failed, totalRequests)
 }
 
 func (c *Client) name() string {

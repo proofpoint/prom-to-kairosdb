@@ -137,30 +137,32 @@ const (
 )
 
 // ParseCfgFile read the provided config file and parse it into config object
-func ParseCfgFile(cfgFile string, cfg *Config) error {
+func ParseCfgFile(cfgFile string) (*Config, error) {
+	logrus.Info("**** FILE PROVIDED**** ", cfgFile)
 	if cfgFile == "" {
-		return fmt.Errorf("no config file provided")
+		return nil, fmt.Errorf("no config file provided")
 	}
 
 	filename, err := getAbsFilename(cfgFile)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	yamlFile, err := ioutil.ReadFile(filename)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
+	cfg := &Config{}
 	err = yaml.Unmarshal(yamlFile, cfg)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	emptyurl := URL{}
 	if cfg.KairosdbURL == emptyurl {
-		return fmt.Errorf("kairosdb-url is mandatory")
+		return nil, fmt.Errorf("kairosdb-url is mandatory")
 	}
 
 	if cfg.Server.Port == "" {
@@ -170,7 +172,7 @@ func ParseCfgFile(cfgFile string, cfg *Config) error {
 	if cfg.MetricnamePrefix != "" {
 		regex, err := NewRegexp(".*")
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		relabelConfig := &RelabelConfig{
@@ -186,7 +188,7 @@ func ParseCfgFile(cfgFile string, cfg *Config) error {
 	err = validateMetricRelabelConfigs(cfg.MetricRelabelConfigs)
 	if err != nil {
 		logrus.Errorf("%s", err)
-		return err
+		return nil, err
 	}
 
 	if cfg.Timeout == 0*time.Second {
@@ -194,14 +196,14 @@ func ParseCfgFile(cfgFile string, cfg *Config) error {
 		cfg.Timeout = defaultTimeout
 	}
 	if cfg.Timeout > maxTimeout {
-		return fmt.Errorf("timeout %d is too high. It should be between %v and %v", cfg.Timeout, minTimeout, maxTimeout)
+		return nil, fmt.Errorf("timeout %d is too high. It should be between %v and %v", cfg.Timeout, minTimeout, maxTimeout)
 	}
 
 	if cfg.Timeout < minTimeout {
-		return fmt.Errorf("timeout %d is too low. It should be between %v and %v", cfg.Timeout, minTimeout, maxTimeout)
+		return nil, fmt.Errorf("timeout %d is too low. It should be between %v and %v", cfg.Timeout, minTimeout, maxTimeout)
 	}
 
-	return nil
+	return cfg, nil
 }
 
 func validateMetricRelabelConfigs(metricRelabelConfigs []*RelabelConfig) error {
