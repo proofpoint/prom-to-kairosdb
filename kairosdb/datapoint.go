@@ -10,10 +10,10 @@ import (
 
 // DataPoint represents the kairosdb DataPoint
 type DataPoint struct {
-	Name      string
-	Timestamp int64
-	Value     float64
-	Tags      map[string]string
+	Name      string            `json:"name"`
+	Timestamp int64             `json:"timestamp"`
+	Value     float64           `json:"value"`
+	Tags      map[string]string `json:"tags"`
 }
 
 // ValidValue filters out values which are not supported by KairosDB

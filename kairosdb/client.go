@@ -13,6 +13,7 @@ import (
 	"github.com/prometheus/common/model"
 	"github.com/proofpoint/prom-to-kairosdb/config"
 	"golang.org/x/net/context/ctxhttp"
+	"io/ioutil"
 )
 
 var (
@@ -113,8 +114,8 @@ func (c *Client) write(datapoints []*DataPoint) error {
 		return err
 	}
 
+	logrus.Debugf("pushing %d datapoints", totalRequests)
 	if c.cfg.DryRun {
-		logrus.Debugf("pushing %d datapoints : %v", totalRequests, string(buf))
 		return nil
 	}
 
@@ -136,13 +137,14 @@ func (c *Client) write(datapoints []*DataPoint) error {
 	}
 
 	if resp.StatusCode == http.StatusNoContent {
+		logrus.Infof("pushed %d datapoints successfully", totalRequests)
 		sentSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
 		return nil
 	}
 
 	// API returns status code 400 on error, encoding error details in the
 	// response content in JSON.
-
+	respbuf, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		logrus.Errorf("%s", err)
 		unknownStatusSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
@@ -150,7 +152,8 @@ func (c *Client) write(datapoints []*DataPoint) error {
 	}
 
 	var r map[string][]interface{}
-	if err = json.Unmarshal(buf, &r); err != nil {
+	if err = json.Unmarshal(respbuf, &r); err != nil {
+		logrus.Errorf("response received is : %s", string(respbuf))
 		logrus.Errorf("%s", err)
 		unknownStatusSamples.WithLabelValues(c.name()).Add(float64(totalRequests))
 		return err
@@ -158,6 +161,14 @@ func (c *Client) write(datapoints []*DataPoint) error {
 
 	failed := len(r["errors"])
 	successful := totalRequests - failed
+
+	//unlikely, but will keep it here anyways
+	//added because a code issue was causing this condition
+	if successful < 0 {
+		logrus.Errorf("response from kairosdb %v", r)
+		logrus.Errorf("req to kairosdb %v", string(buf))
+		return fmt.Errorf("no of failed datapoints [%d] is greater than total datapoints [%d]", failed, totalRequests)
+	}
 
 	sentSamples.WithLabelValues(c.name()).Add(float64(successful))
 	failedSamples.WithLabelValues(c.name()).Add(float64(failed))
