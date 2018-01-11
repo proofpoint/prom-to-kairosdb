@@ -187,7 +187,6 @@ func ParseCfgFile(cfgFile string) (*Config, error) {
 
 	err = validateMetricRelabelConfigs(cfg.MetricRelabelConfigs)
 	if err != nil {
-		logrus.Errorf("%s", err)
 		return nil, err
 	}
 
@@ -256,17 +255,14 @@ func getCurrentWorkingDirectory() (string, error) {
 func ValidateFile(cfgFile string) (bool, error) {
 	fstat, err := os.Stat(cfgFile)
 	if os.IsNotExist(err) {
-		logrus.Errorf("%s dont exist\n", cfgFile)
 		return false, fmt.Errorf("file not found")
 	}
 
 	if fstat.IsDir() {
-		logrus.Errorf("%s is a directory, not a file\n", cfgFile)
 		return false, fmt.Errorf("config file a directory, valid yaml file needed")
 	}
 
 	if fstat.Size() == 0 {
-		logrus.Errorf("%s is empty", cfgFile)
 		return false, fmt.Errorf("config file is empty")
 	}
 
