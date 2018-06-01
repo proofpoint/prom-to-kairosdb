@@ -5,15 +5,17 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"github.com/Sirupsen/logrus"
 	"net/http"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+
+	"io/ioutil"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/model"
 	"github.com/proofpoint/prom-to-kairosdb/config"
 	"golang.org/x/net/context/ctxhttp"
-	"io/ioutil"
 )
 
 var (
@@ -86,13 +88,19 @@ func NewClient(cfg *config.Config) *Client {
 
 // Send - Apply RelabelConfigs, massage the data and write the samples to KairosDB
 func (c *Client) Send(samples model.Samples) (err error) {
+	logrus.Debugf("datapoints prior to filtering: %d", len(samples))
 	datapoints := FilterAndProcessSamples(samples, c.cfg)
+	logrus.Debugf("datapoints after filtering: %d", len(datapoints))
 
 	filteredSamplesCount := len(samples) - len(datapoints)
 	filteredSamples.WithLabelValues(c.name()).Add(float64(filteredSamplesCount))
 
-	begin := time.Now()
+	if len(datapoints) == 0 {
+		logrus.Debugf("empty set of datapoints after filtering; nothing to send.")
+		return nil
+	}
 
+	begin := time.Now()
 	err = c.write(datapoints)
 	if err != nil {
 		logrus.Errorf("failed writing metrics to downstream. error: %s", err)
