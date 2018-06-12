@@ -5,11 +5,11 @@ REPO = prom-to-kairosdb
 NAME = prom-to-kairosdb
 INSTANCE = default
 
-.PHONY: build push shell run start stop rm release vendor
+.PHONY: build push shell run start stop rm release
 
 default: fmt vet test build
 
-build: vendor
+build: 
 	CGO_ENABLED=0 go build -a -installsuffix cgo -o bin/prom-to-kairosdb .
 
 docker:
@@ -32,8 +32,4 @@ fmt:
 
 vet:
 	go vet ./...
-
-vendor:
-	go get -u github.com/Masterminds/glide
-	glide install
 
