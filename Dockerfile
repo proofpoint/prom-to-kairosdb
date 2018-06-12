@@ -2,7 +2,7 @@ FROM golang:1.9 as builder
 WORKDIR /go/src/github.com/proofpoint/prom-to-kairosdb
 
 COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/prom-to-kairosdb
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/prom-to-kairosdb && go test ./... -cover
 
 FROM alpine:3.6
 RUN mkdir /opt
