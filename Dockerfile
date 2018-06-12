@@ -2,8 +2,6 @@ FROM golang:1.9 as builder
 WORKDIR /go/src/github.com/proofpoint/prom-to-kairosdb
 
 COPY . .
-RUN go get -u github.com/Masterminds/glide
-RUN glide install
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o bin/prom-to-kairosdb
 
 FROM alpine:3.6
