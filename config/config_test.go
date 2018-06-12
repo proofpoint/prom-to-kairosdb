@@ -41,7 +41,7 @@ func TestParseCfgFile(t *testing.T) {
 		{
 			name:     "invalid yaml file",
 			fileName: "testdata/invalid_yaml.yaml",
-			err:      errors.New("yaml: line 1: mapping values are not allowed in this context"),
+			err:      errors.New("yaml: line 2: mapping values are not allowed in this context"),
 		},
 		{
 			name:     "empty file",
